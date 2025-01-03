@@ -12,6 +12,9 @@ const customText = {
     月亮短剧社: "@user-moon-drama-club",
     百万好剧场: "@1-pw5ox",
     指间看剧: "@FingertipsTV1",
+    小穎美食: "@XiaoYingFood",
+    李子柒Liziqi: "@cnliziqi",
+    纪实说: "@C-Documentary",
   },
   综艺: {
     腾讯热综: "@TencentVideoShow",
