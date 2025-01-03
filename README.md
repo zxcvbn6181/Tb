@@ -3,7 +3,7 @@
 
 搜索影片之前，请关闭不常用的站源。
 
-## 点播源： [api.json](https://ghproxy.cn/https://raw.githubusercontent.com/alantang1977/tBox/refs/heads/main/api.json)
+## 点播源： [api.json](https://ghproxy.cn/https://raw.githubusercontent.com/alantang1977/jBox/refs/heads/main/api.json)
 
 ## 规则或APP更新
 天翼云盘：首次使用在设置中登录天翼云盘及打开一次雷鲸。
