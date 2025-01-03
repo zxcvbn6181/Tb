@@ -17,6 +17,7 @@ const customText = {
     腾讯热综: "@TencentVideoShow",
     综艺Show: "@C-HitShow",
     浙江卫视奔跑吧: "@KeepRunningChina",
+    纪实风云: "@纪实风云",
   },
 };
 
@@ -25,7 +26,11 @@ const customText = {
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.95 Safari/537.36';
 
-
+function encodeChinese(text) {
+  return text.replace(/[\u4e00-\u9fa5]/g, (match) => {
+    return encodeURIComponent(match);
+  });
+}
 //获取影视列表
 async function categoryContent(tid, pg = 1, extend) {
   const backData = new RepVideo();
@@ -41,7 +46,7 @@ async function categoryContent(tid, pg = 1, extend) {
     }
     let continuation='';
     if(pg == 1) {
-      const initialResponse = await req(`https://www.youtube.com/${channelId}/videos`, {
+      const initialResponse = await req(`https://www.youtube.com/${encodeChinese(channelId)}/videos`, {
         method: 'GET',
         headers: {
           'User-Agent': UA,
@@ -74,7 +79,7 @@ async function categoryContent(tid, pg = 1, extend) {
         'Accept-Language': 'zh-CN,zh;q=0.9',
         'Content-Type': 'application/json',
         'Origin': 'https://www.youtube.com',
-        'Referer': `https://www.youtube.com/${channelId}/videos`,
+        'Referer': `https://www.youtube.com/${encodeChinese(channelId)}/videos`,
       },
       body: JSON.stringify({
         context: {
@@ -264,73 +269,95 @@ async function detailContent(ids) {
   return JSON.stringify(backData);
 }
 
+
+
 //playerContent('Qs0Pt45xy8Q')
+
 async function playerContent(vod_id) {
-  let backData = new RepVideoPlayUrl()
-  let youtubeUrl= `https://www.youtube.com/watch?v=${vod_id}`;
-  try {
-    await toast('正在分析youtube直链...',2);
-    const API_BASE_URL = "https://youtube.iiilab.com";
-    const GTimestamp = Date.now().toString().slice(0, 13);
-    const GFooter = Crypto.MD5(`${youtubeUrl}youtube${GTimestamp}2HT8gjE3xL`).toString();
-    let res = await req( `${API_BASE_URL}/api/extract`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "G-Footer": GFooter,
-        "G-Timestamp": GTimestamp,
-        "Origin": API_BASE_URL,
-        "Referer": `${API_BASE_URL}/`,
-        "User-Agent": UA,
-        "X-Forwarded-For": generateChineseIP()
-      },
-      body: JSON.stringify({
-        link: youtubeUrl,
-        site: "youtube"
-      })
-    });
-    const apiResponse = await res.text();
-    console.log("API 响应:", apiResponse);
-    let highestQualityVideo = null;
-    let highestQualityAudio = null;
-    let maxQuality = -1;
+  let backData = new RepVideoPlayUrl();
+  let youtubeUrl = `https://www.youtube.com/watch?v=${vod_id}`;
+  const maxRetries = 5; // 最大重试次数
+  const retryDelay = 1000; // 重试间隔时间（毫秒）
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const mediaData = JSON.parse(apiResponse); // 解析 JSON
-      if (mediaData.medias && Array.isArray(mediaData.medias)) {
-        mediaData.medias.forEach(media => {
-          if (media.media_type === "video" && media.formats && Array.isArray(media.formats)) {
-            media.formats.forEach(format => {
-              if (format.quality > maxQuality) {
-                maxQuality = format.quality;
-                highestQualityVideo = format.video_url;
-                highestQualityAudio = format.audio_url;
-              }
-            });
+      await toast('正在分析youtube直链...', 2);
+      const API_BASE_URL = "https://youtube.iiilab.com";
+      const GTimestamp = Date.now().toString().slice(0, 13);
+      const GFooter = Crypto.MD5(`${youtubeUrl}youtube${GTimestamp}2HT8gjE3xL`).toString();
+      let res = await req(`${API_BASE_URL}/api/extract`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "G-Footer": GFooter,
+          "G-Timestamp": GTimestamp,
+          "Origin": API_BASE_URL,
+          "Referer": `${API_BASE_URL}/`,
+          "User-Agent": UA,
+          "X-Forwarded-For": generateChineseIP()
+        },
+        body: JSON.stringify({
+          link: youtubeUrl,
+          site: "youtube"
+        })
+      });
+      const apiResponse = await res.text();
+      console.log("API 响应:", apiResponse);
+
+      let highestQualityVideo = null;
+      let highestQualityAudio = null;
+      let maxQuality = -1;
+
+      try {
+        const mediaData = JSON.parse(apiResponse); // 解析 JSON
+        if (mediaData.medias && Array.isArray(mediaData.medias)) {
+          mediaData.medias.forEach(media => {
+            if (media.media_type === "video" && media.formats && Array.isArray(media.formats)) {
+              media.formats.forEach(format => {
+                if (format.quality > maxQuality) {
+                  maxQuality = format.quality;
+                  highestQualityVideo = format.video_url;
+                  highestQualityAudio = format.audio_url;
+                }
+              });
+            }
+          });
+        }
+
+        if (highestQualityVideo && highestQualityAudio) {
+          await toast(`解析完毕，尝试播放...`, 2);
+          console.log("最高质量的视频 URL:", highestQualityVideo);
+          console.log("最高质量的音频 URL:", highestQualityAudio);
+          console.log("质量:", maxQuality);
+          backData.audioUrl = highestQualityAudio;
+          backData.url = highestQualityVideo;
+          backData.header = headersToString({ 'User-Agent': UA });
+          backData.parse = 1;
+          console.log(JSON.stringify(backData));
+          return JSON.stringify(backData);
+        } else {
+          console.log(`第 ${attempt} 次尝试未找到有效的视频或音频 URL`);
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, retryDelay)); // 等待1秒后重试
           }
-        });
+        }
+      } catch (parseError) {
+        console.error(`第 ${attempt} 次尝试解析 API 响应失败:`, parseError);
+        await toast(`第 ${attempt} 次尝试解析 API 响应失败`, 2);
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, retryDelay)); // 等待1秒后重试
+        }
       }
-      if (highestQualityVideo && highestQualityAudio) {
-        console.log("最高质量的视频 URL:", highestQualityVideo);
-        console.log("最高质量的音频 URL:", highestQualityAudio);
-        console.log("质量:", maxQuality);
-        backData.audioUrl = highestQualityAudio;
-        backData.url = highestQualityVideo;
-        backData.header = headersToString( { 'User-Agent': UA  })
-        backData.parse = 1
-        console.log(JSON.stringify(backData));
-        return JSON.stringify(backData);
-      } else {
-        console.log("未找到有效的视频或音频 URL");
-        return '';
+    } catch (error) {
+      console.error(`第 ${attempt} 次尝试发生错误:`, error);
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, retryDelay)); // 等待1秒后重试
       }
-    } catch (parseError) {
-      console.error("解析 API 响应失败:", parseError);
-      return '';
     }
-  } catch (error) {
-    console.error("发生错误:", error);
-    return '';
   }
+
+  console.log("已达到最大重试次数，未能获取有效的视频或音频 URL");
+  return '';
 }
 
 
