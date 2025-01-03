@@ -804,6 +804,20 @@
     "filterPlayFileKeywords": "",
     "keepPlayFileKeywords": "",
     "selectedPlayer": "0"
+  },{
+    "key": "youtube",
+    "name": "🥎youtube┃仅搜索",
+    "type": 5,
+    "searchable": 1,
+    "filterClass": "",
+    "firstClass": "",
+    "filterPlay": "",
+    "firstPlay": "",
+    "ext": "https://ghproxy.cn/https://raw.githubusercontent.com/alantang1977/xBox/refs/heads/main/json/youtube.js",
+    "flagable": 0,
+    "filterPlayFileKeywords": "",
+    "keepPlayFileKeywords": "",
+    "selectedPlayer": "0"
   }],
 	"parses": [{
 		"name": "解析1",
