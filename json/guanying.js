@@ -1,5 +1,5 @@
 //观影站点的cookie
-let gygCookie = "BT_auth=2aa0upqK5SvwPkxJp7Ln8-qXRGF746Jq6W41L7t29kWkkKR7MQoTT3QDVJdHdooQ65TFUFLtSPbnj3uja-PkkmHVRC-MXyAXFDkxml_rgobpH9FsQjJM63vINatZpo0tQ8pwlAgx5VOBNAKGiAWri9Pj5i3cQHZSPu-g;BT_cookietime=ee61LM-7duddS1pxIclAuz3eQdiEusNeV;vrg_sc=748bee9f85079ae2641061d;vrg_go=2;";
+let gygCookie = "替换你的cookie";
 
 // 提取夸克网盘链接的数量,不要太多（否则造成读取详情页卡）
 const QUARK_COUNT = 3; 
